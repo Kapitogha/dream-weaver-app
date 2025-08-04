@@ -6,7 +6,7 @@ import {
     getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
     GoogleAuthProvider, signInWithPopup, signInAnonymously, onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; // Corrected import for getFirestore
 
 // Import UI utility functions
 import { showLoading, hideLoading, showMessage, showLoginScreen, showMainAppScreen } from './ui-utils.js';
@@ -24,6 +24,11 @@ export let isAuthReady = false; // Flag to indicate if auth state has been deter
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 export const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // appId is still provided by Canvas
 
+// Determine firebaseConfig based on environment: window.firebaseConfig (for deployed app)
+// or __firebase_config (for Canvas preview). This needs to be at the top-level of the module.
+const firebaseConfig = window.firebaseConfig || (typeof __firebase_config !== 'undefined' && __firebase_config !== '' ? JSON.parse(__firebase_config) : null);
+
+
 /**
  * Initializes Firebase app and services.
  * Sets up authentication state listener.
@@ -33,10 +38,6 @@ export async function initializeFirebase() {
     // This is crucial because window.firebaseConfig is set by a script tag in index.html
     // which might execute after this module script if not handled carefully.
     document.addEventListener('DOMContentLoaded', async () => {
-        // Determine firebaseConfig based on environment: window.firebaseConfig (for deployed app)
-        // or __firebase_config (for Canvas preview).
-        const firebaseConfig = window.firebaseConfig || (typeof __firebase_config !== 'undefined' && __firebase_config !== '' ? JSON.parse(__firebase_config) : null);
-
         try {
             // Explicitly check for apiKey before initializing Firebase app
             if (!firebaseConfig || !firebaseConfig.apiKey) {
@@ -68,7 +69,7 @@ export async function initializeFirebase() {
                     showLoginScreen(); // Show login screen
                 }
                 // Call setupAuthUIListeners here, after the appropriate screen is visible
-                // This ensures the DOM elements are available.
+                // This ensures the DOM elements are available and the auth state is known.
                 setupAuthUIListeners();
             });
 
