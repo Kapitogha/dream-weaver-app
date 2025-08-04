@@ -1,0 +1,25 @@
+{
+  "name": "dream-weaver-app",
+  "version": "1.0.0",
+  "description": "A web application for recording, analyzing, and matching dreams with reality, powered by Firebase and Gemini API.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "pwa",
+    "firebase",
+    "gemini",
+    "dream",
+    "journal",
+    "web-app"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "serve-static": "^1.15.0"
+  }
+}

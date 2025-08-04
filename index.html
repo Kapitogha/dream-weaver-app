@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dream Weaver</title>
+    <!-- Favicon for PWA -->
+    <link rel="icon" href="https://placehold.co/32x32/6b46c1/ffffff?text=DW" type="image/png">
+    <!-- Meta theme color for PWA (changes browser bar color) -->
+    <meta name="theme-color" content="#f0eaff" id="meta-theme-color">
+
+    <!-- Content Security Policy (CSP) - ADDED FOR PREVIEW ENVIRONMENT -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://www.gstatic.com;
+        style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com;
+        img-src 'self' data: https://placehold.co;
+        connect-src 'self' https://*.firebaseio.com https://*.firebase.com https://*.googleapis.com https://securetoken.googleapis.com https://*.cloudfunctions.net https://*.google.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://www.gstatic.com;
+        worker-src 'self' blob: 'unsafe-eval';
+        font-src 'self' data:;
+        media-src 'self' blob:;
+        object-src 'none';
+        frame-ancestors 'none';
+    ">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the app */
+        body {
+            font-family: "Inter", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-color: #f0eaff; /* Light purple background */
+            transition: background-color 0.3s ease;
+        }
+        body.dark-theme-record {
+            background-color: #1a202c; /* Dark background for record tab */
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .tab-button {
+            @apply flex-1 py-3 px-4 text-center font-semibold text-gray-600 rounded-t-lg transition-colors duration-200;
+        }
+        .tab-button.active-tab {
+            @apply bg-white text-purple-700 shadow-md;
+        }
+        .subtab-button {
+            @apply flex-1 py-2 px-3 text-center text-sm font-medium text-gray-600 rounded-md transition-colors duration-200;
+        }
+        .subtab-button.active-tab {
+            @apply bg-purple-100 text-purple-800 font-semibold;
+        }
+        .section-content {
+            @apply bg-white p-6 rounded-b-lg shadow-lg;
+        }
+        .input-group {
+            @apply mb-4;
+        }
+        .input-group label {
+            @apply block text-gray-700 text-sm font-bold mb-2;
+        }
+        .input-group input[type="text"],
+        .input-group input[type="email"],
+        .input-group input[type="password"],
+        .input-group textarea {
+            @apply shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline;
+        }
+        .btn-primary {
+            @apply bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-colors duration-200;
+        }
+        .btn-secondary {
+            @apply bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-colors duration-200;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .message-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            z-index: 1001;
+            text-align: center;
+        }
+        .message-bubble {
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 1.25rem;
+            margin-bottom: 0.5rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .user-message {
+            background-color: #e9d5ff; /* purple-200 */
+            color: #6b21a8; /* purple-800 */
+            margin-left: auto;
+            border-bottom-right-radius: 0.25rem;
+        }
+        .gemini-message {
+            background-color: #bfdbfe; /* blue-100 */
+            color: #1e40af; /* blue-800 */
+            margin-right: auto;
+            border-bottom-left-radius: 0.25rem;
+        }
+        .draft-item, .archive-item, .search-result-item {
+            @apply p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-3;
+        }
+        .draft-item-content, .archive-item-content {
+            @apply flex-1;
+        }
+        .draft-item-actions, .archive-item-actions, .search-result-actions {
+            @apply flex flex-wrap gap-2 mt-2 md:mt-0;
+        }
+        .pre-analyzed-draft {
+            @apply border-green-300 bg-green-50;
+        }
+        .tick-icon {
+            @apply inline-block ml-1 text-green-600 font-bold;
+        }
+        .analysis-section-item {
+            @apply mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200;
+        }
+        .analysis-section-item h4 {
+            @apply font-semibold text-purple-700 mb-1;
+        }
+        .analysis-section-item p {
+            @apply text-gray-700 text-sm;
+        }
+        .chat-messages-container {
+            @apply flex flex-col h-96 overflow-y-auto p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4;
+        }
+        .stats-grid {
+            @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4;
+        }
+        .stat-card {
+            @apply bg-white p-4 rounded-lg shadow border border-gray-200;
+        }
+        .stat-card h3 {
+            @apply text-lg font-semibold text-purple-700 mb-2;
+        }
+        .stat-card p {
+            @apply text-2xl font-bold text-gray-800;
+        }
+        .top-insights-card ul {
+            @apply list-disc list-inside text-gray-700 text-sm;
+        }
+        .search-result-item-header {
+            @apply flex justify-between items-center w-full mb-1;
+        }
+        .search-result-type {
+            @apply text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-8">
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-500"></div>
+    </div>
+
+    <!-- Message Modal -->
+    <div id="message-modal" class="message-modal hidden">
+        <p id="modal-message" class="text-lg font-medium mb-4"></p>
+        <button id="modal-close-button" class="btn-primary">Close</button>
+    </div>
+
+    <!-- App Header (Visible after login) -->
+    <header id="app-header" class="w-full bg-white shadow-md p-4 mb-8 rounded-xl hidden">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-purple-800">Dream Weaver</h1>
+            <div class="flex items-center space-x-4">
+                <span id="user-id-display" class="text-gray-600 text-sm"></span>
+                <button id="signout-button" class="btn-secondary">Sign Out</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Authentication Screen -->
+    <main id="auth-screen" class="container mx-auto p-6 bg-white rounded-xl shadow-lg w-full max-w-md">
+        <h2 class="text-2xl font-bold text-center text-purple-700 mb-6">Sign In / Sign Up</h2>
+        <div class="input-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="your@example.com">
+        </div>
+        <div class="input-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Password">
+        </div>
+        <div class="flex flex-col space-y-3">
+            <button id="signin-button" class="btn-primary">Sign In</button>
+            <button id="signup-button" class="btn-secondary">Sign Up</button>
+            <button id="google-signin-button" class="btn-secondary flex items-center justify-center space-x-2">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.0003 4.75C14.0203 4.75 15.8303 5.48 17.2403 6.82L20.0803 4.01C18.0003 2.19 15.1203 1 12.0003 1C7.75033 1 4.00033 3.42 2.16033 7.02L5.47033 9.54C6.20033 7.57 8.07033 6.25 10.1603 6.25C11.1603 6.25 12.0003 6.5 12.0003 6.5V4.75Z" fill="#EA4335"/><path d="M22.2503 12.0003C22.2503 11.3903 22.1903 10.7903 22.0803 10.2103H12.0003V14.2903H18.5203C18.2303 15.7603 17.3403 16.9903 16.0703 17.8203L18.7303 19.9803C20.4803 18.2703 21.6003 15.9303 22.2503 12.0003Z" fill="#4285F4"/><path d="M12.0003 23C15.1203 23 17.8903 21.92 19.9903 20.15L17.2403 17.82C16.0903 18.66 14.2803 19.25 12.0003 19.25C8.07033 19.25 4.74033 16.88 3.43033 13.58L0.160332 16.07C2.00033 19.67 5.75033 22.09 12.0003 22.09V23Z" fill="#34A853"/><path d="M3.43033 13.58L0.160332 16.07C0.050332 15.49 0 14.89 0 14.29C0 12.03 0.610332 9.87 1.70033 8.01L4.40033 5.86L7.71033 8.35C6.98033 10.32 6.57033 12.0003 6.57033 12.0003C6.57033 12.0003 6.98033 13.6803 7.71033 15.6503L3.43033 13.58Z" fill="#FBBC04"/>
+                </svg>
+                <span>Sign in with Google</span>
+            </button>
+        </div>
+    </main>
+
+    <!-- Main App Screen (Hidden until login) -->
+    <div id="app-screen" class="container mx-auto bg-white rounded-xl shadow-lg hidden">
+        <!-- Main Tabs Navigation -->
+        <nav class="flex border-b border-gray-200">
+            <button id="tab-record" class="tab-button">Record</button>
+            <button id="tab-dreams" class="tab-button">Dreams</button>
+            <button id="tab-reality" class="tab-button">Reality</button>
+            <button id="tab-search" class="tab-button">Search</button>
+            <button id="tab-stats" class="tab-button">Stats</button>
+        </nav>
+
+        <!-- Record Section -->
+        <section id="record-section" class="section-content hidden">
+            <h2 class="text-2xl font-bold text-purple-700 mb-4">Record Your Dream</h2>
+            <div class="input-group">
+                <label for="dream-input-record">Dream Text (or speak into microphone)</label>
+                <textarea id="dream-input-record" rows="8" placeholder="Start typing or click 'Start Recording' to speak your dream..."></textarea>
+                <p id="audio-status" class="text-sm text-gray-500 mt-2">Ready to record.</p>
+            </div>
+            <div class="flex space-x-3 mb-4">
+                <button id="start-night-recording-button" class="btn-primary">Start Recording</button>
+                <button id="stop-night-recording-button" class="btn-secondary" disabled>Stop Recording</button>
+            </div>
+            <button id="generate-suggestion-button" class="btn-secondary">Generate Suggestion</button>
+        </section>
+
+        <!-- Dreams Section -->
+        <section id="dreams-section" class="section-content hidden">
+            <h2 class="text-2xl font-bold text-purple-700 mb-4">Your Dreams</h2>
+            <!-- Dreams Sub-tabs Navigation -->
+            <nav class="flex space-x-2 border-b border-gray-200 mb-4 pb-2">
+                <button id="subtab-drafts" class="subtab-button">Drafts</button>
+                <button id="subtab-analysis" class="subtab-button">Analysis</button>
+                <button id="subtab-archive" class="subtab-button">Archive</button>
+                <button id="subtab-matches" class="subtab-button">Matches</button>
+            </nav>
+
+            <!-- Drafts Sub-section -->
+            <div id="drafts-section" class="hidden">
+                <h3 class="text-xl font-bold text-purple-600 mb-3">Dream Drafts</h3>
+                <div class="input-group">
+                    <label for="dream-title-draft">Dream Title (Optional)</label>
+                    <input type="text" id="dream-title-draft" placeholder="e.g., Flying over mountains">
+                </div>
+                <div class="input-group">
+                    <label for="dream-input-draft">Dream Text</label>
+                    <textarea id="dream-input-draft" rows="6" placeholder="Describe your dream here..."></textarea>
+                </div>
+                <button id="add-dream-button" class="btn-primary mb-6">Save Draft / Update Dream</button>
+                <div id="draft-dreams-list" class="space-y-4">
+                    <!-- Draft dreams will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Analysis Sub-section -->
+            <div id="analysis-section" class="hidden">
+                <h3 class="text-xl font-bold text-purple-600 mb-3">Dream Analysis</h3>
+                <div class="flex items-center space-x-4 mb-4">
+                    <label for="time-scope-select" class="text-gray-700 font-medium">Analyze dreams from:</label>
+                    <select id="time-scope-select" class="form-select rounded-md border-gray-300 shadow-sm focus:border-purple-300 focus:ring focus:ring-purple-200 focus:ring-opacity-50">
+                        <option value="lastNight">Last Night</option>
+                        <option value="last7Days">Last 7 Days (Holistic)</option>
+                        <option value="last30Days">Last 30 Days (Holistic)</option>
+                        <option value="lastYear">Last Year (Holistic)</option>
+                        <option value="allTime">All Time (Holistic)</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <span class="text-gray-700 font-medium mr-2">Output Format:</span>
+                    <label class="inline-flex items-center mr-4">
+                        <input type="radio" name="output-format" value="summary" class="form-radio text-purple-600" checked>
+                        <span class="ml-2 text-gray-700">Summary</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="output-format" value="expanded" class="form-radio text-purple-600">
+                        <span class="ml-2 text-gray-700">Expanded</span>
+                    </label>
+                </div>
+                <button id="analyze-dream-in-analysis-tab" class="btn-primary mb-6">Analyze Dreams Holistically</button>
+                <div id="loading-dream-analysis" class="hidden text-center text-purple-600 font-semibold mb-4">
+                    Analyzing your dreams... this might take a moment.
+                </div>
+                <div id="per-dream-analysis-list" class="space-y-4">
+                    <!-- Individual dreams for "Last Night" analysis will be listed here -->
+                </div>
+                <div id="dream-analysis-output" class="hidden p-4 bg-purple-50 rounded-lg border border-purple-200 mt-4">
+                    <h4 class="text-lg font-bold text-purple-800 mb-2">Analysis Results:</h4>
+                    <div id="analysis-content" class="space-y-2">
+                        <!-- Analysis content will be displayed here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Archive Sub-section -->
+            <div id="archive-section" class="hidden">
+                <h3 class="text-xl font-bold text-purple-600 mb-3">Archived Dreams</h3>
+                <div id="archived-dreams-list" class="space-y-4">
+                    <!-- Archived dreams will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Matches Sub-section -->
+            <div id="matches-section" class="hidden">
+                <h3 class="text-xl font-bold text-purple-600 mb-3">Dream-Reality Matches</h3>
+                <div id="matched-dreams-list" class="space-y-4">
+                    <!-- Matched dreams will be loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Reality Section -->
+        <section id="reality-section" class="section-content hidden">
+            <h2 class="text-2xl font-bold text-purple-700 mb-4">Your Reality</h2>
+            <!-- Reality Sub-tabs Navigation -->
+            <nav class="flex space-x-2 border-b border-gray-200 mb-4 pb-2">
+                <button id="subtab-daily-events" class="subtab-button">Daily Events</button>
+                <button id="subtab-ai-chat" class="subtab-button">AI Chat</button>
+            </nav>
+
+            <!-- Daily Events Sub-section -->
+            <div id="daily-events-subsection" class="hidden">
+                <h3 class="text-xl font-bold text-purple-600 mb-3">Log Daily Events</h3>
+                <div class="input-group">
+                    <label for="daily-event-input">What happened today?</label>
+                    <textarea id="daily-event-input" rows="4" placeholder="Describe a significant event from your day..."></textarea>
+                </div>
+                <button id="log-daily-event-button" class="btn-primary mb-6">Log Event</button>
+                <div id="daily-events-list" class="space-y-4">
+                    <!-- Daily events will be loaded here -->
+                </div>
+            </div>
+
+            <!-- AI Chat Sub-section -->
+            <div id="ai-chat-subsection" class="hidden">
+                <h3 class="text-xl font-bold text-purple-600 mb-3">AI Chat</h3>
+                <div id="chat-messages" class="chat-messages-container">
+                    <!-- Chat messages will appear here -->
+                </div>
+                <div id="loading-chat-response" class="hidden text-center text-blue-600 font-semibold mb-4">
+                    AI is typing...
+                </div>
+                <div class="flex space-x-2">
+                    <input type="text" id="chat-input" class="flex-1" placeholder="Type your message or 'image of [something]'...">
+                    <button id="send-chat-button" class="btn-primary">Send</button>
+                    <button id="archive-chat-button" class="btn-secondary">Archive Chat</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search Section -->
+        <section id="search-section" class="section-content hidden">
+            <h2 class="text-2xl font-bold text-purple-700 mb-4">Search & Match</h2>
+            <div class="input-group">
+                <label for="search-input">Search Term</label>
+                <input type="text" id="search-input" placeholder="e.g., flying, meeting, happy">
+            </div>
+            <div class="flex items-center space-x-4 mb-4">
+                <label for="time-scope-search" class="text-gray-700 font-medium">Search within:</label>
+                <select id="time-scope-search" class="form-select rounded-md border-gray-300 shadow-sm focus:border-purple-300 focus:ring focus:ring-purple-200 focus:ring-opacity-50">
+                    <option value="allTime">All Time</option>
+                    <option value="last7Days">Last 7 Days</option>
+                    <option value="last30Days">Last 30 Days</option>
+                    <option value="lastYear">Last Year</option>
+                </select>
+            </div>
+            <button id="search-button" class="btn-primary mb-6">Search Dreams & Events</button>
+            <button id="match-selected-button" class="btn-secondary mb-6 ml-4" disabled>Match Selected (1 Dream, 1 Event)</button>
+            <div id="search-results-list" class="space-y-6">
+                <!-- Search results will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Stats Section -->
+        <section id="stats-section" class="section-content hidden">
+            <h2 class="text-2xl font-bold text-purple-700 mb-4">Your Stats</h2>
+            <!-- Stats Sub-tabs Navigation -->
+            <nav class="flex space-x-2 border-b border-gray-200 mb-4 pb-2">
+                <button id="subtab-totals" class="subtab-button">Totals</button>
+                <button id="subtab-dream-stats" class="subtab-button">Dream Breakdown</button>
+                <button id="subtab-top-insights" class="subtab-button">Top Insights</button>
+            </nav>
+
+            <!-- Totals Sub-section -->
+            <div id="totals-subsection" class="hidden">
+                <h3 class="text-xl font-bold text-purple-600 mb-3">Overall Totals</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Dreams Archived</h3>
+                        <p id="stat-total-dreams">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Daily Events Logged</h3>
+                        <p id="stat-total-events">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Chat Conversations</h3>
+                        <p id="stat-total-chats">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Dreams Matched with Reality</h3>
+                        <p id="stat-matched-dreams">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dream Breakdown Sub-section -->
+            <div id="dream-stats-subsection" class="hidden">
+                <h3 class="text-xl font-bold text-purple-600 mb-3">Dream Analysis Breakdown</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Actions Performed</h3>
+                        <p id="stat-actions-performed">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Location Info</h3>
+                        <p id="stat-location-info">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Time in Dream</h3>
+                        <p id="stat-time-in-dream">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Movements Through Time</h3>
+                        <p id="stat-movements-through-time">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Emotional Content</h3>
+                        <p id="stat-emotional-content">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Surface Psychological Content</h3>
+                        <p id="stat-surface-psychological-content">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Work Done in Dream</h3>
+                        <p id="stat-work-done-in-dream">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Familiar Persons Spoken To</h3>
+                        <p id="stat-familiar-persons-spoken-to">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Relation to Past Events</h3>
+                        <p id="stat-relation-to-past-events">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Relation to Future Events</h3>
+                        <p id="stat-relation-to-future-events">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Messages Received</h3>
+                        <p id="stat-messages-received">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Awareness of Space</h3>
+                        <p id="stat-awareness-of-space">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Insights Sub-section -->
+            <div id="top-insights-subsection" class="hidden">
+                <h3 class="text-xl font-bold text-purple-600 mb-3">Top Insights from Analysis</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="stat-card top-insights-card">
+                        <h3>Top Emotional Content</h3>
+                        <ul id="top-emotional-content"></ul>
+                    </div>
+                    <div class="stat-card top-insights-card">
+                        <h3>Top Locations</h3>
+                        <ul id="top-locations"></ul>
+                    </div>
+                    <div class="stat-card top-insights-card">
+                        <h3>Top Familiar Persons</h3>
+                        <ul id="top-familiar-persons"></ul>
+                    </div>
+                    <div class="stat-card top-insights-card">
+                        <h3>Top Actions Performed</h3>
+                        <ul id="top-actions-performed"></ul>
+                    </div>
+                    <div class="stat-card top-insights-card">
+                        <h3>Top Surface Psychological Content</h3>
+                        <ul id="top-surface-psychological-content"></ul>
+                    </div>
+                    <div class="stat-card top-insights-card">
+                        <h3>Top Messages Received</h3>
+                        <ul id="top-messages-received"></ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal for viewing detailed dream analysis (used by Dreams -> Archive and Search) -->
+    <div id="view-dream-details-modal" class="message-modal hidden">
+        <h3 id="view-dream-details-title" class="text-2xl font-bold text-purple-700 mb-4"></h3>
+        <div class="mb-4 text-left">
+            <h4 class="font-semibold text-gray-800 mb-1">Your Dream:</h4>
+            <p id="view-dream-text" class="text-gray-700 text-sm p-3 bg-gray-50 rounded-lg border border-gray-200"></p>
+        </div>
+        <div class="mb-4 text-left">
+            <h4 class="font-semibold text-purple-700 mb-1">Detailed Analysis:</h4>
+            <div id="view-analysis-content" class="space-y-3">
+                <!-- Detailed analysis will be loaded here -->
+            </div>
+        </div>
+        <button id="close-dream-details-button" class="btn-primary">Close</button>
+    </div>
+
+    <!-- Modal for adding/editing a match (used by Dreams -> Matches and Search) -->
+    <div id="add-match-modal" class="message-modal hidden">
+        <h3 class="text-2xl font-bold text-purple-700 mb-4">Add/Edit Reality Match</h3>
+        <div class="mb-4 text-left">
+            <h4 class="font-semibold text-gray-800 mb-1">Dream Snippet:</h4>
+            <p id="match-dream-snippet" class="text-gray-700 text-sm p-3 bg-gray-50 rounded-lg border border-gray-200"></p>
+        </div>
+        <div class="input-group text-left">
+            <label for="matched-event-input">Matched Reality Event:</label>
+            <textarea id="matched-event-input" rows="3" placeholder="Describe the reality event that matches this dream..."></textarea>
+        </div>
+        <div class="flex justify-center space-x-4">
+            <button id="save-match-button" class="btn-primary">Save Match</button>
+            <button id="cancel-match-button" class="btn-secondary">Cancel</button>
+        </div>
+    </div>
+
+
+    <!-- Main application script -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>
