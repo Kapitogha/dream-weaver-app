@@ -1,3 +1,4 @@
+// Test comment
 // firebase-init.js
 
 // Firebase SDK imports
