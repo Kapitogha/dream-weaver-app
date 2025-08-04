@@ -2,7 +2,7 @@
 
 // Import all necessary modules
 // Removed auth, userId, isAuthReady, setupAuthUIListeners as their logic is now centralized in firebase-init.js
-import { initializeFirebase } from './firebase-init.js';
+import { initializeFirebase } from './firebase-init.js'; // Keep this import, but its call is handled by firebase-init.js
 import { showLoginScreen, showMainAppScreen, showMessage } from './ui-utils.js'; // Still needed for screen display functions
 import { initializeRecordModule } from './record-module.js';
 import {
@@ -283,7 +283,7 @@ export async function initializeAppContent() { // Exported so firebase-init can 
 }
 
 // Initial Firebase initialization. This will trigger onAuthStateChanged in firebase-init.js
-// This should be called once the DOM is fully loaded.
-document.addEventListener('DOMContentLoaded', () => {
-    initializeFirebase();
-});
+// Removed DOMContentLoaded listener from here. initializeFirebase is called directly from firebase-init.js
+// document.addEventListener('DOMContentLoaded', () => {
+//     initializeFirebase();
+// });

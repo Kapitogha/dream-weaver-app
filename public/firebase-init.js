@@ -1,4 +1,3 @@
-// Test comment
 // firebase-init.js
 
 // Firebase SDK imports
@@ -26,7 +25,8 @@ const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial
 export const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // appId is still provided by Canvas
 
 // --- YOUR FIREBASE CONFIGURATION GOES HERE ---
-// IMPORTANT: This configuration is directly embedded for reliable access.
+// IMPORTANT: Replace the entire object below with your actual Firebase project's configuration.
+// You can find this in your Firebase project settings -> Project settings -> General -> Your apps -> Firebase SDK snippet -> Config.
 const firebaseConfig = {
     apiKey: "AIzaSyC1LVJRvGZxcEdXMK_0pw2Sx6KKPHX6Liw", // Corrected API Key from your screenshot
     authDomain: "dreams-35716.firebaseapp.com",
@@ -44,8 +44,8 @@ const firebaseConfig = {
  * Sets up authentication state listener.
  */
 export async function initializeFirebase() {
-    // We no longer need the DOMContentLoaded listener here because firebaseConfig is directly embedded.
-    // The module script itself will run after the DOM is ready.
+    // Removed DOMContentLoaded listener from here.
+    // The module script itself will run after the DOM is ready, and initializeFirebase is called at the end of the file.
 
     try {
         // Explicitly check for apiKey before initializing Firebase app
