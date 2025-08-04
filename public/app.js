@@ -1,8 +1,9 @@
 // app.js
 
 // Import all necessary modules
-import { auth, initializeFirebase, userId, isAuthReady, setupAuthUIListeners } from './firebase-init.js';
-import { showLoginScreen, showMainAppScreen, showMessage } from './ui-utils.js';
+// Removed auth, userId, isAuthReady, setupAuthUIListeners as their logic is now centralized in firebase-init.js
+import { initializeFirebase } from './firebase-init.js';
+import { showLoginScreen, showMainAppScreen, showMessage } from './ui-utils.js'; // Still needed for screen display functions
 import { initializeRecordModule } from './record-module.js';
 import {
     initializeDreamsModule, loadDraftDreams, loadArchivedDreams,
@@ -44,43 +45,44 @@ function showTab(tabId) {
     statsSection.classList.add('hidden');
 
     // Deactivate all main tab buttons
-    tabRecord.classList.remove('active-tab');
-    tabDreams.classList.remove('active-tab');
-    tabReality.classList.remove('active-tab');
-    tabSearch.classList.remove('active-tab');
-    tabStats.classList.remove('active-tab');
+    if (tabRecord) tabRecord.classList.remove('active-tab');
+    if (tabDreams) tabDreams.classList.remove('active-tab');
+    if (tabReality) tabReality.classList.remove('active-tab');
+    if (tabSearch) tabSearch.classList.remove('active-tab');
+    if (tabStats) tabStats.classList.remove('active-tab');
 
     // Set default theme to bright
-    document.getElementById('meta-theme-color').content = '#f0eaff';
+    const metaThemeColor = document.getElementById('meta-theme-color');
+    if (metaThemeColor) metaThemeColor.content = '#f0eaff';
     document.body.classList.remove('dark-theme-record');
 
     // Show the selected section and activate its button
     switch (tabId) {
         case 'record':
-            recordSection.classList.remove('hidden');
-            tabRecord.classList.add('active-tab');
-            document.getElementById('meta-theme-color').content = '#1a202c'; // Dark theme for record
+            if (recordSection) recordSection.classList.remove('hidden');
+            if (tabRecord) tabRecord.classList.add('active-tab');
+            if (metaThemeColor) metaThemeColor.content = '#1a202c'; // Dark theme for record
             document.body.classList.add('dark-theme-record');
             break;
         case 'dreams':
-            dreamsSection.classList.remove('hidden');
-            tabDreams.classList.add('active-tab');
+            if (dreamsSection) dreamsSection.classList.remove('hidden');
+            if (tabDreams) tabDreams.classList.add('active-tab');
             // Default to Drafts sub-tab if no other sub-tab is active
             showDreamsSubTab('drafts');
             break;
         case 'reality':
-            realitySection.classList.remove('hidden');
-            tabReality.classList.add('active-tab');
+            if (realitySection) realitySection.classList.remove('hidden');
+            if (tabReality) tabReality.classList.add('active-tab');
             // Default to Daily Events sub-tab if no other sub-tab is active
             showRealitySubTab('daily-events');
             break;
         case 'search':
-            searchSection.classList.remove('hidden');
-            tabSearch.classList.add('active-tab');
+            if (searchSection) searchSection.classList.remove('hidden');
+            if (tabSearch) tabSearch.classList.add('active-tab');
             break;
         case 'stats':
-            statsSection.classList.remove('hidden');
-            tabStats.classList.add('active-tab');
+            if (statsSection) statsSection.classList.remove('hidden');
+            if (tabStats) tabStats.classList.add('active-tab');
             // Default to Totals sub-tab if no other sub-tab is active
             showStatsSubTab('totals');
             break;
@@ -104,37 +106,37 @@ function showDreamsSubTab(subTabId) {
     const matchesSection = document.getElementById('matches-section');
 
     // Hide all Dreams sub-sections
-    draftsSection.classList.add('hidden');
-    analysisSection.classList.add('hidden');
-    archiveSection.classList.add('hidden');
-    matchesSection.classList.add('hidden');
+    if (draftsSection) draftsSection.classList.add('hidden');
+    if (analysisSection) analysisSection.classList.add('hidden');
+    if (archiveSection) archiveSection.classList.add('hidden');
+    if (matchesSection) matchesSection.classList.add('hidden');
 
     // Deactivate all Dreams sub-tab buttons
-    subtabDrafts.classList.remove('active-tab');
-    subtabAnalysis.classList.remove('active-tab');
-    subtabArchive.classList.remove('active-tab');
-    subtabMatches.classList.remove('active-tab');
+    if (subtabDrafts) subtabDrafts.classList.remove('active-tab');
+    if (subtabAnalysis) subtabAnalysis.classList.remove('active-tab');
+    if (subtabArchive) subtabArchive.classList.remove('active-tab');
+    if (subtabMatches) subtabMatches.classList.remove('active-tab');
 
     // Show the selected sub-section and activate its button
     switch (subTabId) {
         case 'drafts':
-            draftsSection.classList.remove('hidden');
-            subtabDrafts.classList.add('active-tab');
+            if (draftsSection) draftsSection.classList.remove('hidden');
+            if (subtabDrafts) subtabDrafts.classList.add('active-tab');
             loadDraftDreams(); // Load data for drafts
             break;
         case 'analysis':
-            analysisSection.classList.remove('hidden');
-            subtabAnalysis.classList.add('active-tab');
+            if (analysisSection) analysisSection.classList.remove('hidden');
+            if (subtabAnalysis) subtabAnalysis.classList.add('active-tab');
             loadDreamsForAnalysisTab(); // Load dreams for analysis
             break;
         case 'archive':
-            archiveSection.classList.remove('hidden');
-            subtabArchive.classList.add('active-tab');
+            if (archiveSection) archiveSection.classList.remove('hidden');
+            if (subtabArchive) subtabArchive.classList.add('active-tab');
             loadArchivedDreams(); // Load data for archived dreams
             break;
         case 'matches':
-            matchesSection.classList.remove('hidden');
-            subtabMatches.classList.add('active-tab');
+            if (matchesSection) matchesSection.classList.remove('hidden');
+            if (subtabMatches) subtabMatches.classList.add('active-tab');
             loadMatchedDreams(); // Load data for matched dreams
             break;
     }
@@ -153,23 +155,23 @@ function showRealitySubTab(subTabId) {
     const aiChatSubsection = document.getElementById('ai-chat-subsection');
 
     // Hide all Reality sub-sections
-    dailyEventsSubsection.classList.add('hidden');
-    aiChatSubsection.classList.add('hidden');
+    if (dailyEventsSubsection) dailyEventsSubsection.classList.add('hidden');
+    if (aiChatSubsection) aiChatSubsection.classList.add('hidden');
 
     // Deactivate all Reality sub-tab buttons
-    subtabDailyEvents.classList.remove('active-tab');
-    subtabAiChat.classList.remove('active-tab');
+    if (subtabDailyEvents) subtabDailyEvents.classList.remove('active-tab');
+    if (subtabAiChat) subtabAiChat.classList.remove('active-tab');
 
     // Show the selected sub-section and activate its button
     switch (subTabId) {
         case 'daily-events':
-            dailyEventsSubsection.classList.remove('hidden');
-            subtabDailyEvents.classList.add('active-tab');
+            if (dailyEventsSubsection) dailyEventsSubsection.classList.remove('hidden');
+            if (subtabDailyEvents) subtabDailyEvents.classList.add('active-tab');
             loadDailyEvents(); // Load data for daily events
             break;
         case 'ai-chat':
-            aiChatSubsection.classList.remove('hidden');
-            subtabAiChat.classList.add('active-tab');
+            if (aiChatSubsection) aiChatSubsection.classList.remove('hidden');
+            if (subtabAiChat) subtabAiChat.classList.add('active-tab');
             startNewConversation(); // Start/load chat conversation
             break;
     }
@@ -190,30 +192,30 @@ function showStatsSubTab(subTabId) {
     const topInsightsSubsection = document.getElementById('top-insights-subsection');
 
     // Hide all Stats sub-sections
-    totalsSubsection.classList.add('hidden');
-    dreamStatsSubsection.classList.add('hidden');
-    topInsightsSubsection.classList.add('hidden');
+    if (totalsSubsection) totalsSubsection.classList.add('hidden');
+    if (dreamStatsSubsection) dreamStatsSubsection.classList.add('hidden');
+    if (topInsightsSubsection) topInsightsSubsection.classList.add('hidden');
 
     // Deactivate all Stats sub-tab buttons
-    subtabTotals.classList.remove('active-tab');
-    subtabDreamStats.classList.remove('active-tab');
-    subtabTopInsights.classList.remove('active-tab');
+    if (subtabTotals) subtabTotals.classList.remove('active-tab');
+    if (subtabDreamStats) subtabDreamStats.classList.remove('active-tab');
+    if (subtabTopInsights) subtabTopInsights.classList.remove('active-tab');
 
     // Show the selected sub-section and activate its button
     switch (subTabId) {
         case 'totals':
-            totalsSubsection.classList.remove('hidden');
-            subtabTotals.classList.add('active-tab');
+            if (totalsSubsection) totalsSubsection.classList.remove('hidden');
+            if (subtabTotals) subtabTotals.classList.add('active-tab');
             loadStats(); // Load overall stats
             break;
         case 'dream-stats':
-            dreamStatsSubsection.classList.remove('hidden');
-            subtabDreamStats.classList.add('active-tab');
+            if (dreamStatsSubsection) dreamStatsSubsection.classList.remove('hidden');
+            if (subtabDreamStats) subtabDreamStats.classList.add('active-tab');
             loadDetailedDreamStats(); // Load detailed dream stats
             break;
         case 'top-insights':
-            topInsightsSubsection.classList.remove('hidden');
-            subtabTopInsights.classList.add('active-tab');
+            if (topInsightsSubsection) topInsightsSubsection.classList.remove('hidden');
+            if (subtabTopInsights) subtabTopInsights.classList.add('active-tab');
             loadTopInsights(); // Load top insights
             break;
     }
@@ -224,7 +226,7 @@ function showStatsSubTab(subTabId) {
  * Called after Firebase is initialized and authentication state is determined.
  * This function now also sets up event listeners for main tabs and sub-tabs.
  */
-async function initializeAppContent() {
+export async function initializeAppContent() { // Exported so firebase-init can call it
     // Get UI Elements - Main Tabs (now fetched here)
     const tabRecord = document.getElementById('tab-record');
     const tabDreams = document.getElementById('tab-dreams');
@@ -280,22 +282,7 @@ async function initializeAppContent() {
     showTab('record');
 }
 
-// Listen for Firebase authentication state changes
-// This listener will be set up by initializeFirebase()
-// The setupAuthUIListeners is called here to ensure auth elements are available.
-auth.onAuthStateChanged(user => {
-    if (user) {
-        showMainAppScreen(user.uid);
-        // Ensure app elements are available before initializing app content
-        initializeAppContent();
-    } else {
-        showLoginScreen();
-    }
-    // Setup auth UI listeners after the correct screen is shown
-    setupAuthUIListeners();
-});
-
-// Initial Firebase initialization. This will trigger onAuthStateChanged.
+// Initial Firebase initialization. This will trigger onAuthStateChanged in firebase-init.js
 // This should be called once the DOM is fully loaded.
 document.addEventListener('DOMContentLoaded', () => {
     initializeFirebase();

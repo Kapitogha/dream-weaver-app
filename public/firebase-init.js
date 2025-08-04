@@ -10,6 +10,8 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase
 
 // Import UI utility functions
 import { showLoading, hideLoading, showMessage, showLoginScreen, showMainAppScreen } from './ui-utils.js';
+// Import app content initialization function
+import { initializeAppContent } from './app.js'; // Import initializeAppContent
 
 // Global Firebase variables (will be initialized later)
 export let app;
@@ -39,13 +41,17 @@ export async function initializeFirebase() {
                 userId = user.uid;
                 isAuthReady = true;
                 console.log("Firebase Auth State Changed: User is signed in.", userId);
-                // The app.js will handle showing the main screen after this
+                showMainAppScreen(user.uid); // Show main app screen
+                initializeAppContent(); // Initialize app sections and their listeners
             } else {
                 userId = null;
                 isAuthReady = true;
                 console.log("Firebase Auth State Changed: No user is signed in.");
-                // The app.js will handle showing the login screen after this
+                showLoginScreen(); // Show login screen
             }
+            // Call setupAuthUIListeners here, after the appropriate screen is visible
+            // This ensures the DOM elements are available.
+            setupAuthUIListeners();
         });
 
         // Attempt to sign in with custom token if available (Canvas environment)
@@ -62,6 +68,8 @@ export async function initializeFirebase() {
         console.error("Error initializing Firebase or signing in:", error);
         showMessage('error', `Firebase initialization failed: ${error.message}`);
         isAuthReady = true; // Still set to true to allow UI to proceed, even if failed
+        showLoginScreen(); // Ensure login screen is shown even on error
+        setupAuthUIListeners(); // Setup listeners even on error to allow manual login attempts
     }
 }
 
