@@ -9,10 +9,10 @@
     <!-- Meta theme color for PWA (changes browser bar color) -->
     <meta name="theme-color" content="#f0eaff" id="meta-theme-color">
 
-    <!-- Content Security Policy (CSP) - ADDED FOR PREVIEW ENVIRONMENT -->
+    <!-- Content Security Policy (CSP) -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
-        script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://www.gstatic.com;
+        script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://www.gstatic.com https://www.google.com;
         style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com;
         img-src 'self' data: https://placehold.co;
         connect-src 'self' https://*.firebaseio.com https://*.firebase.com https://*.googleapis.com https://securetoken.googleapis.com https://*.cloudfunctions.net https://*.google.com https://www.googleapis.com https://identitytoolkit.googleapis.com https://www.gstatic.com;
@@ -165,6 +165,9 @@
             @apply text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700;
         }
     </style>
+
+    <!-- Firebase Configuration -->
+    <!-- FIREBASE_CONFIG_PLACEHOLDER -->
 </head>
 <body class="min-h-screen flex flex-col items-center py-8">
     <!-- Loading Overlay -->
@@ -371,11 +374,11 @@
             <div class="flex items-center space-x-4 mb-4">
                 <label for="time-scope-search" class="text-gray-700 font-medium">Search within:</label>
                 <select id="time-scope-search" class="form-select rounded-md border-gray-300 shadow-sm focus:border-purple-300 focus:ring focus:ring-purple-200 focus:ring-opacity-50">
-                    <option value="allTime">All Time</option>
-                    <option value="last7Days">Last 7 Days</option>
-                    <option value="last30Days">Last 30 Days</option>
-                    <option value="lastYear">Last Year</option>
-                </select>
+                        <option value="allTime">All Time</option>
+                        <option value="last7Days">Last 7 Days</option>
+                        <option value="last30Days">Last 30 Days</option>
+                        <option value="lastYear">Last Year</option>
+                    </select>
             </div>
             <button id="search-button" class="btn-primary mb-6">Search Dreams & Events</button>
             <button id="match-selected-button" class="btn-secondary mb-6 ml-4" disabled>Match Selected (1 Dream, 1 Event)</button>

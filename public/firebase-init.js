@@ -20,57 +20,22 @@ export let db;
 export let userId = null;
 export let isAuthReady = false; // Flag to indicate if auth state has been determined
 
-// Global variables provided by the Canvas environment (for local testing/Canvas preview)
-// For App Hosting deployment, these will be undefined, and we'll rely on process.env
-const canvasFirebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config !== '' ? JSON.parse(__firebase_config) : null;
-const canvasInitialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+// The initialAuthToken is only provided by the Canvas environment.
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 export const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // appId is still provided by Canvas
-
-/**
- * Determines the Firebase configuration to use.
- * Prioritizes environment variables (for App Hosting) over Canvas-provided globals.
- */
-function getFirebaseConfig() {
-    // Check for environment variables (used in App Hosting)
-    if (
-        typeof process !== 'undefined' && process.env &&
-        process.env.FIREBASE_API_KEY &&
-        process.env.FIREBASE_AUTH_DOMAIN &&
-        process.env.FIREBASE_PROJECT_ID &&
-        process.env.FIREBASE_STORAGE_BUCKET &&
-        process.env.FIREBASE_MESSAGING_SENDER_ID &&
-        process.env.FIREBASE_APP_ID
-    ) {
-        console.log("Using Firebase config from environment variables.");
-        return {
-            apiKey: process.env.FIREBASE_API_KEY,
-            authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-            messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-            appId: process.env.FIREBASE_APP_ID,
-            // measurementId is optional and can be added if needed: process.env.FIREBASE_MEASUREMENT_ID
-        };
-    } else if (canvasFirebaseConfig) {
-        console.log("Using Firebase config from Canvas globals.");
-        return canvasFirebaseConfig;
-    } else {
-        console.error("No Firebase configuration found from environment variables or Canvas globals.");
-        return null; // No config available
-    }
-}
 
 /**
  * Initializes Firebase app and services.
  * Sets up authentication state listener.
  */
 export async function initializeFirebase() {
-    const firebaseConfig = getFirebaseConfig();
+    // Access firebaseConfig from the global window object (set in index.html by server.js)
+    const firebaseConfig = window.firebaseConfig;
 
     try {
         // Explicitly check for apiKey before initializing Firebase app
         if (!firebaseConfig || !firebaseConfig.apiKey) {
-            const errorMessage = "Firebase initialization failed: Missing API Key in Firebase configuration. Please ensure your Firebase project is correctly set up and its configuration is provided via environment variables or Canvas globals.";
+            const errorMessage = "Firebase initialization failed: Missing API Key in Firebase configuration. Please ensure your Firebase project is correctly set up and its configuration is embedded in index.html by the server.";
             console.error(errorMessage);
             showMessage('error', errorMessage);
             isAuthReady = true; // Still set to true to allow UI to proceed, even if failed
@@ -104,8 +69,8 @@ export async function initializeFirebase() {
 
         // Attempt to sign in with custom token if available (Canvas environment)
         // Note: initialAuthToken is only available in Canvas, not in App Hosting
-        if (canvasInitialAuthToken) {
-            await signInWithCustomToken(auth, canvasInitialAuthToken);
+        if (initialAuthToken) {
+            await signInWithCustomToken(auth, initialAuthToken);
             console.log("Signed in with custom token (Canvas).");
         } else {
             // If no custom token, sign in anonymously for initial access
@@ -116,7 +81,7 @@ export async function initializeFirebase() {
 
     } catch (error) {
         console.error("Error initializing Firebase or signing in:", error);
-        showMessage('error', `Firebase initialization failed: ${error.message}. Please check your Firebase project configuration and ensure environment variables are set.`);
+        showMessage('error', `Firebase initialization failed: ${error.message}. Please ensure your Firebase project configuration is correctly embedded in index.html by the server.`);
         isAuthReady = true; // Still set to true to allow UI to proceed, even if failed
         showLoginScreen(); // Ensure login screen is shown even on error
         setupAuthUIListeners(); // Setup listeners even on error to allow manual login attempts
