@@ -24,69 +24,74 @@ export let isAuthReady = false; // Flag to indicate if auth state has been deter
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 export const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // appId is still provided by Canvas
 
-// Determine firebaseConfig based on environment: window.firebaseConfig (for deployed app)
-// or __firebase_config (for Canvas preview).
-const firebaseConfig = window.firebaseConfig || (typeof __firebase_config !== 'undefined' && __firebase_config !== '' ? JSON.parse(__firebase_config) : null);
-
 /**
  * Initializes Firebase app and services.
  * Sets up authentication state listener.
  */
 export async function initializeFirebase() {
-    try {
-        // Explicitly check for apiKey before initializing Firebase app
-        if (!firebaseConfig || !firebaseConfig.apiKey) {
-            const errorMessage = "Firebase initialization failed: Missing API Key in Firebase configuration. Please ensure your Firebase project is correctly set up and its configuration is provided in index.html or via Canvas globals.";
-            console.error(errorMessage);
-            showMessage('error', errorMessage);
+    // Ensure the DOM is fully loaded before trying to access window.firebaseConfig
+    // This is crucial because window.firebaseConfig is set by a script tag in index.html
+    // which might execute after this module script if not handled carefully.
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Determine firebaseConfig based on environment: window.firebaseConfig (for deployed app)
+        // or __firebase_config (for Canvas preview).
+        const firebaseConfig = window.firebaseConfig || (typeof __firebase_config !== 'undefined' && __firebase_config !== '' ? JSON.parse(__firebase_config) : null);
+
+        try {
+            // Explicitly check for apiKey before initializing Firebase app
+            if (!firebaseConfig || !firebaseConfig.apiKey) {
+                const errorMessage = "Firebase initialization failed: Missing API Key in Firebase configuration. Please ensure your Firebase project is correctly set up and its configuration is provided in index.html or via Canvas globals.";
+                console.error(errorMessage);
+                showMessage('error', errorMessage);
+                isAuthReady = true; // Still set to true to allow UI to proceed, even if failed
+                showLoginScreen(); // Ensure login screen is shown even on error
+                setupAuthUIListeners(); // Setup listeners even on error to allow manual login attempts
+                return; // Stop initialization if API key is missing
+            }
+
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+
+            // Listen for auth state changes
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    isAuthReady = true;
+                    console.log("Firebase Auth State Changed: User is signed in.", userId);
+                    showMainAppScreen(user.uid); // Show main app screen
+                    initializeAppContent(); // Initialize app sections and their listeners
+                } else {
+                    userId = null;
+                    isAuthReady = true;
+                    console.log("Firebase Auth State Changed: No user is signed in.");
+                    showLoginScreen(); // Show login screen
+                }
+                // Call setupAuthUIListeners here, after the appropriate screen is visible
+                // This ensures the DOM elements are available.
+                setupAuthUIListeners();
+            });
+
+            // Attempt to sign in with custom token if available (Canvas environment)
+            // Note: initialAuthToken is only available in Canvas, not in App Hosting
+            if (initialAuthToken) {
+                await signInWithCustomToken(auth, initialAuthToken);
+                console.log("Signed in with custom token (Canvas).");
+            } else {
+                // If no custom token, sign in anonymously for initial access
+                // This is the path for App Hosting deployments if no user is logged in
+                await signInAnonymously(auth);
+                console.log("Signed in anonymously (App Hosting or no Canvas token).");
+            }
+
+        } catch (error) {
+            console.error("Error initializing Firebase or signing in:", error);
+            showMessage('error', `Firebase initialization failed: ${error.message}. Please ensure your Firebase project configuration is correctly embedded in index.html or provided via Canvas globals.`);
             isAuthReady = true; // Still set to true to allow UI to proceed, even if failed
             showLoginScreen(); // Ensure login screen is shown even on error
             setupAuthUIListeners(); // Setup listeners even on error to allow manual login attempts
-            return; // Stop initialization if API key is missing
         }
-
-        app = initializeApp(firebaseConfig);
-        auth = getAuth(app);
-        db = getFirestore(app);
-
-        // Listen for auth state changes
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                userId = user.uid;
-                isAuthReady = true;
-                console.log("Firebase Auth State Changed: User is signed in.", userId);
-                showMainAppScreen(user.uid); // Show main app screen
-                initializeAppContent(); // Initialize app sections and their listeners
-            } else {
-                userId = null;
-                isAuthReady = true;
-                console.log("Firebase Auth State Changed: No user is signed in.");
-                showLoginScreen(); // Show login screen
-            }
-            // Call setupAuthUIListeners here, after the appropriate screen is visible
-            // This ensures the DOM elements are available.
-            setupAuthUIListeners();
-        });
-
-        // Attempt to sign in with custom token if available (Canvas environment)
-        // Note: initialAuthToken is only available in Canvas, not in App Hosting
-        if (initialAuthToken) {
-            await signInWithCustomToken(auth, initialAuthToken);
-            console.log("Signed in with custom token (Canvas).");
-        } else {
-            // If no custom token, sign in anonymously for initial access
-            // This is the path for App Hosting deployments if no user is logged in
-            await signInAnonymously(auth);
-            console.log("Signed in anonymously (App Hosting or no Canvas token).");
-        }
-
-    } catch (error) {
-        console.error("Error initializing Firebase or signing in:", error);
-        showMessage('error', `Firebase initialization failed: ${error.message}. Please ensure your Firebase project configuration is correctly embedded in index.html or provided via Canvas globals.`);
-        isAuthReady = true; // Still set to true to allow UI to proceed, even if failed
-        showLoginScreen(); // Ensure login screen is shown even on error
-        setupAuthUIListeners(); // Setup listeners even on error to allow manual login attempts
-    }
+    }); // End of DOMContentLoaded listener
 }
 
 // --- Authentication Functions ---
