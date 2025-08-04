@@ -194,3 +194,6 @@ export function setupAuthUIListeners() {
         signoutButton.addEventListener('click', userSignOut);
     }
 }
+
+// Call initializeFirebase to start the process when the module loads
+initializeFirebase();
