@@ -21,7 +21,8 @@ export let userId = null;
 export let isAuthReady = false; // Flag to indicate if auth state has been determined
 
 // Global variables provided by the Canvas environment
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+// Ensure firebaseConfig is parsed correctly and defaults to an empty object if __firebase_config is undefined or empty string
+const firebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config !== '' ? JSON.parse(__firebase_config) : {};
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 export const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
@@ -31,6 +32,17 @@ export const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-i
  */
 export async function initializeFirebase() {
     try {
+        // Explicitly check for apiKey before initializing Firebase app
+        if (!firebaseConfig.apiKey) {
+            const errorMessage = "Firebase initialization failed: Missing API Key in Firebase configuration. Please ensure your Firebase project is correctly set up and its configuration is provided.";
+            console.error(errorMessage);
+            showMessage('error', errorMessage);
+            isAuthReady = true; // Still set to true to allow UI to proceed, even if failed
+            showLoginScreen(); // Ensure login screen is shown even on error
+            setupAuthUIListeners(); // Setup listeners even on error to allow manual login attempts
+            return; // Stop initialization if API key is missing
+        }
+
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         db = getFirestore(app);
@@ -66,7 +78,7 @@ export async function initializeFirebase() {
 
     } catch (error) {
         console.error("Error initializing Firebase or signing in:", error);
-        showMessage('error', `Firebase initialization failed: ${error.message}`);
+        showMessage('error', `Firebase initialization failed: ${error.message}. Please check your Firebase project configuration.`);
         isAuthReady = true; // Still set to true to allow UI to proceed, even if failed
         showLoginScreen(); // Ensure login screen is shown even on error
         setupAuthUIListeners(); // Setup listeners even on error to allow manual login attempts
