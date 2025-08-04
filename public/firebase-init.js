@@ -24,18 +24,19 @@ export let isAuthReady = false; // Flag to indicate if auth state has been deter
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 export const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // appId is still provided by Canvas
 
+// Determine firebaseConfig based on environment: window.firebaseConfig (for deployed app)
+// or __firebase_config (for Canvas preview).
+const firebaseConfig = window.firebaseConfig || (typeof __firebase_config !== 'undefined' && __firebase_config !== '' ? JSON.parse(__firebase_config) : null);
+
 /**
  * Initializes Firebase app and services.
  * Sets up authentication state listener.
  */
 export async function initializeFirebase() {
-    // Access firebaseConfig from the global window object (set in index.html by server.js)
-    const firebaseConfig = window.firebaseConfig;
-
     try {
         // Explicitly check for apiKey before initializing Firebase app
         if (!firebaseConfig || !firebaseConfig.apiKey) {
-            const errorMessage = "Firebase initialization failed: Missing API Key in Firebase configuration. Please ensure your Firebase project is correctly set up and its configuration is embedded in index.html by the server.";
+            const errorMessage = "Firebase initialization failed: Missing API Key in Firebase configuration. Please ensure your Firebase project is correctly set up and its configuration is provided in index.html or via Canvas globals.";
             console.error(errorMessage);
             showMessage('error', errorMessage);
             isAuthReady = true; // Still set to true to allow UI to proceed, even if failed
@@ -81,7 +82,7 @@ export async function initializeFirebase() {
 
     } catch (error) {
         console.error("Error initializing Firebase or signing in:", error);
-        showMessage('error', `Firebase initialization failed: ${error.message}. Please ensure your Firebase project configuration is correctly embedded in index.html by the server.`);
+        showMessage('error', `Firebase initialization failed: ${error.message}. Please ensure your Firebase project configuration is correctly embedded in index.html or provided via Canvas globals.`);
         isAuthReady = true; // Still set to true to allow UI to proceed, even if failed
         showLoginScreen(); // Ensure login screen is shown even on error
         setupAuthUIListeners(); // Setup listeners even on error to allow manual login attempts
@@ -135,7 +136,7 @@ export async function signInWithGoogle() {
         const provider = new GoogleAuthProvider();
         await signInWithPopup(auth, provider);
         showMessage('success', 'Signed in with Google successfully!');
-    } catch (error) {
+    }  catch (error) {
         console.error("Error signing in with Google:", error);
         showMessage('error', `Google sign-in failed: ${error.message}`);
     } finally {
